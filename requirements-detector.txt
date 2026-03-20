@@ -1,0 +1,5 @@
+# Manhole detector dependencies
+# Install: pip install -r requirements-detector.txt
+
+ultralytics>=8.0.0      # YOLOv8 — training + inference
+label-studio            # open-source review & annotation platform (self-hosted)

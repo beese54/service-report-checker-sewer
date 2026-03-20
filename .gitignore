@@ -1,0 +1,69 @@
+# Images - never publish raw data
+original_images/
+adjusted_images/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+
+# Office files
+*.pptx
+*.ppt
+*.xlsx
+*.xls
+*.docx
+*.doc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp uploads inside container (if any)
+uploads/
+
+# Data and pipeline outputs
+data/
+pipeline_output/
+results/
+sift_metrics_cache.json
+ground_truth.json
+
+# Contact sheet outputs (generated, not committed)
+*_contact_sheet.jpg
+accepted_contact_sheet.jpg
+
+# Secrets
+.env.default
+.env.default.*
+!.env.default.example
+config.json
+
+# Airbase deployment files (not needed for this repo)
+.airbase/
+Dockerfile.airbase
+requirements-airbase.txt
+entrypoint.sh
+docs/deployment-airbase.md
+
+# Model weights (large binary files — user must supply, see README)
+manhole_detector/
+
+# Training dataset (images — not for public release)
+dataset/
+
+# Pipeline run JSON outputs
+pipeline_run_*.json
+
+# Example source images (full-size originals — only cropped outputs are committed)
+docs/examples/source/
+
+# Internal Claude Code session files
+tasks/
+
+# Monitoring test artefacts
+monitoring/

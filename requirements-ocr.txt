@@ -1,0 +1,14 @@
+paddlepaddle==2.6.2
+numpy==1.26.4
+Pillow>=10.0.0
+# paddleocr 2.7.3 has an overly strict opencv pin in its metadata.
+# Install it separately with --no-deps (see README) — opencv 4.8+ works fine.
+# imgaug (paddleocr dependency) is incompatible with numpy>=2.0, hence the numpy pin above.
+shapely
+scikit-image
+imgaug
+pyclipper
+lmdb
+tqdm
+visualdl
+rapidfuzz

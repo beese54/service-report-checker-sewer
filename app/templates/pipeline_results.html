@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline Results — WRN Service Report Checker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous">
+  <style>
+    body       { background: #f4f6fa; }
+    .hero      { background: #0d2b55; color: #fff; padding: 1.5rem 0 1rem; margin-bottom: 2rem; }
+    .hero h1   { font-size: 1.5rem; font-weight: 700; }
+    .hero .sub { font-size: .85rem; opacity: .75; }
+
+    .summary-card { border-radius: 10px; text-align: center; padding: 1.2rem .8rem; }
+    .summary-card .num   { font-size: 2.2rem; font-weight: 800; }
+    .summary-card .label { font-size: .8rem; margin-top: .2rem; opacity: .85; }
+
+    .card-accepted   { background: #d4edda; color: #155724; }
+    .card-review     { background: #fff3cd; color: #856404; }
+    .card-rejected   { background: #f8d7da; color: #721c24; }
+    .card-obstruction{ background: #cce5ff; color: #004085; }
+    .card-total      { background: #e2e3e5; color: #383d41; }
+
+    .badge-ACCEPTED              { background: #28a745; color: #fff; }
+    .badge-NEEDS_REVIEW          { background: #ffc107; color: #212529; }
+    .badge-REJECTED              { background: #dc3545; color: #fff; }
+    .badge-OBSTRUCTION_PROCESSED { background: #17a2b8; color: #fff; }
+
+    .filter-bar input { max-width: 320px; }
+    #folderTable th   { cursor: pointer; user-select: none; white-space: nowrap; }
+    #folderTable th:after { content: ' \25B4\25BE'; font-size: .65em; opacity: .4; }
+
+    .breakdown-bar { height: 8px; border-radius: 4px; background: #dc3545; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <h1>Pipeline Results</h1>
+    <div class="sub">Job {{ job_id }}  &bull;  Run date: {{ result.run_date }}</div>
+  </div>
+</div>
+
+{% set s = result.summary %}
+{% set folders = result.folders %}
+{% set rb = result.rejected_breakdown %}
+{% set total_rej = s.rejected %}
+
+<div class="container pb-5">
+
+  <!-- ══ Summary cards ══════════════════════════════════════════════════════ -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md col-sm-4">
+      <div class="summary-card card-total">
+        <div class="num">{{ s.total }}</div>
+        <div class="label">Total Folders</div>
+      </div>
+    </div>
+    <div class="col-6 col-md col-sm-4">
+      <div class="summary-card card-accepted">
+        <div class="num">{{ s.accepted }}</div>
+        <div class="label">Accepted</div>
+      </div>
+    </div>
+    <div class="col-6 col-md col-sm-4">
+      <div class="summary-card card-review">
+        <div class="num">{{ s.needs_review }}</div>
+        <div class="label">Needs Review</div>
+      </div>
+    </div>
+    <div class="col-6 col-md col-sm-4">
+      <div class="summary-card card-rejected">
+        <div class="num">{{ s.rejected }}</div>
+        <div class="label">Rejected</div>
+      </div>
+    </div>
+    <div class="col-6 col-md col-sm-4">
+      <div class="summary-card card-obstruction">
+        <div class="num">{{ s.obstruction_processed }}</div>
+        <div class="label">Obstruction Processed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Rejected breakdown ═════════════════════════════════════════════════ -->
+  {% if rb %}
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-danger text-white fw-semibold">
+      Rejected — Breakdown by Stage
+    </div>
+    <div class="card-body">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Stage</th>
+            <th class="text-end">Count</th>
+            <th class="text-end">% of Rejected</th>
+            <th style="width:40%">Bar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stage, cnt in rb.items() %}
+          <tr>
+            <td>{{ stage }}</td>
+            <td class="text-end">{{ cnt }}</td>
+            <td class="text-end">
+              {% if total_rej > 0 %}
+                {{ "%.0f" % (cnt / total_rej * 100) }}%
+              {% else %}—{% endif %}
+            </td>
+            <td class="align-middle">
+              {% if total_rej > 0 %}
+              <div class="breakdown-bar"
+                   style="width:{{ (cnt / total_rej * 100)|int }}%"></div>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          <tr class="table-light fw-semibold">
+            <td>TOTAL</td>
+            <td class="text-end">{{ total_rej }}</td>
+            <td class="text-end">100%</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ══ Folder table ═══════════════════════════════════════════════════════ -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">All Folders ({{ folders|length }})</span>
+      <div class="filter-bar">
+        <input type="text" id="searchInput" class="form-control form-control-sm"
+               placeholder="Filter by name or status…" />
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div style="max-height:520px; overflow-y:auto">
+        <table class="table table-hover table-sm mb-0 align-middle" id="folderTable">
+          <thead class="table-dark sticky-top" style="top:0">
+            <tr>
+              <th data-col="0">Folder</th>
+              <th data-col="1">Type</th>
+              <th data-col="2">Status</th>
+              <th data-col="3">Failed Stage</th>
+              <th>Stage Metrics</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            {% for row in folders %}
+            {% set d   = row.detail or {} %}
+            {% set s2  = d.get('stage2n', {}) %}
+            {% set s2p = s2.get('pair_stats', {}) %}
+            {% set s3  = d.get('stage3n', {}) %}
+            {% set s3p = s3.get('pair_results', {}) %}
+            {% set s4  = d.get('stage4n', d.get('stage4n_rescue', {})) %}
+            {% set s4p = s4.get('pair_results', {}) %}
+            <tr data-status="{{ row.status }}"
+                data-name="{{ row.name }}"
+                data-type="{{ row.type }}">
+              <td class="fw-semibold">{{ row.name }}</td>
+              <td>
+                {% if row.type == "no_obstruction" %}
+                  <span class="badge bg-success bg-opacity-25 text-success">no obstruction</span>
+                {% else %}
+                  <span class="badge bg-warning bg-opacity-25 text-warning-emphasis">obstruction</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge rounded-pill badge-{{ row.status }}">
+                  {{ row.status.replace('_', ' ') }}
+                </span>
+              </td>
+              <td class="text-muted small">{{ row.failed_stage if row.failed_stage else '—' }}</td>
+
+              <!-- Stage Metrics inline summary -->
+              <td class="small">
+                {% if row.type == "no_obstruction" %}
+                  {# Stage 2N inliers #}
+                  {% for pfx, ps in s2p.items() %}
+                    {% if ps.get('status') != 'MISSING_IMAGES' %}
+                      <span class="badge bg-{% if ps.get('stage2n_pass') %}success{% else %}danger{% endif %} me-1"
+                            title="Stage 2N SIFT — RANSAC inliers">
+                        {{ pfx }}:{{ ps.get('ransac_inliers','?') }}
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary me-1" title="{{ pfx }} — missing images">{{ pfx }}:—</span>
+                    {% endif %}
+                  {% endfor %}
+                  {# Stage 3N washing tier #}
+                  {% for pfx, pr in s3p.items() %}
+                    {% set tier = pr.get('washing_tier','') %}
+                    {% if pr.get('status') == 'OK' %}
+                      <span class="badge bg-{% if tier=='HIGH' %}success{% elif tier=='MEDIUM' %}warning text-dark{% else %}danger{% endif %} me-1"
+                            title="Stage 3N washing confidence {{ '%.0f%%'|format(pr.get('washing_confidence',0)*100) }}">
+                        {{ pfx }}:{{ tier or '?' }}
+                      </span>
+                    {% elif pr.get('status') == 'FAILED' %}
+                      <span class="badge bg-secondary me-1" title="{{ pfx }}: {{ pr.get('error','failed') }}">{{ pfx }}:—</span>
+                    {% endif %}
+                  {% endfor %}
+                  {# Stage 4N geometry #}
+                  {% for pfx, pr in s4p.items() %}
+                    {% if pr.get('status') not in ('MISSING_IMAGES', None) %}
+                      <span class="badge bg-{% if pr.get('status')=='PASS' %}success{% elif pr.get('status')=='REVIEW' %}warning text-dark{% else %}danger{% endif %} me-1"
+                            title="Stage 4N score={{ pr.get('score','?') }} blur={{ pr.get('gate',{}).get('blur_score','?') }}">
+                        {{ pfx }}:{{ pr.get('status','?') }}{% if pr.get('score') is not none %}/{{ pr.get('score') }}{% endif %}
+                      </span>
+                    {% endif %}
+                  {% endfor %}
+                {% elif row.type == "obstruction" %}
+                  {% set ocr = d.get('ocr', {}) %}
+                  {% if ocr %}
+                    <span class="badge bg-info text-dark" title="OCR images processed">
+                      OCR {{ ocr.get('images_processed',0) }}/{{ (ocr.get('images_processed',0) + ocr.get('images_failed',0)) }}
+                    </span>
+                  {% endif %}
+                {% endif %}
+              </td>
+
+              <td>
+                {% if d %}
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2" data-action="toggle-detail">Show</button>
+                {% endif %}
+              </td>
+            </tr>
+
+            {% if d %}
+            <tr class="detail-row d-none">
+              <td colspan="6" class="p-2 bg-light">
+
+                {# ── Stage 2N ──────────────────────────────────────────── #}
+                {% if s2p %}
+                <div class="mb-2">
+                  <div class="fw-semibold small text-muted mb-1">Stage 2N — SIFT Alignment (D1/D4, U1/U4)</div>
+                  <table class="table table-bordered table-sm small mb-0">
+                    <thead class="table-secondary">
+                      <tr><th>Pair</th><th>Gate Conf D</th><th>Gate Conf A</th><th>RANSAC Inliers</th><th>Coverage %</th><th>Mean Diff</th><th>Pct Changed</th><th>Result</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for pfx, ps in s2p.items() %}
+                      <tr>
+                        <td class="fw-semibold">{{ pfx }}</td>
+                        {% if ps.get('status') == 'MISSING_IMAGES' %}
+                          <td colspan="7" class="text-muted fst-italic">Missing images</td>
+                        {% else %}
+                          <td>{{ "%.2f"|format(ps.get('gate_conf_D1', ps.get('gate_conf_U1', 0))) }}</td>
+                          <td>{{ "%.2f"|format(ps.get('gate_conf_D4', ps.get('gate_conf_U4', 0))) }}</td>
+                          <td>{{ ps.get('ransac_inliers', '—') }}</td>
+                          <td>{{ ps.get('inlier_coverage_pct', '—') }}{% if ps.get('inlier_coverage_pct') is not none %}%{% endif %}</td>
+                          <td>{{ ps.get('mean_diff', '—') }}</td>
+                          <td>{{ ps.get('pct_changed', '—') }}{% if ps.get('pct_changed') is not none %}%{% endif %}</td>
+                          <td>{% if ps.get('stage2n_pass') %}<span class="badge bg-success">PASS</span>{% else %}<span class="badge bg-danger">FAIL</span>{% endif %}</td>
+                        {% endif %}
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% endif %}
+
+                {# ── Stage 3N ──────────────────────────────────────────── #}
+                {% if s3p %}
+                <div class="mb-2">
+                  <div class="fw-semibold small text-muted mb-1">Stage 3N — Washing Confidence (D2/D5, U2/U5)</div>
+                  <table class="table table-bordered table-sm small mb-0">
+                    <thead class="table-secondary">
+                      <tr><th>Pair</th><th>Tier</th><th>Confidence</th><th>kp Ratio</th><th>Entropy Increase</th><th>RANSAC Inliers</th><th>Result</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for pfx, pr in s3p.items() %}
+                      {% set ss = pr.get('sift_stats', {}) %}
+                      {% set mt = pr.get('metrics', {}) %}
+                      <tr>
+                        <td class="fw-semibold">{{ pfx }}</td>
+                        {% if pr.get('status') != 'OK' %}
+                          <td colspan="6" class="text-muted fst-italic">{{ pr.get('error', pr.get('status', '—')) }}</td>
+                        {% else %}
+                          {% set tier = pr.get('washing_tier','') %}
+                          <td><span class="badge bg-{% if tier=='HIGH' %}success{% elif tier=='MEDIUM' %}warning text-dark{% else %}danger{% endif %}">{{ tier }}</span></td>
+                          <td>{{ "%.0f%%"|format(pr.get('washing_confidence',0)*100) }}</td>
+                          <td>{{ mt.get('kp_ratio', ss.get('kp_ratio', '—')) }}</td>
+                          <td>{{ mt.get('entropy_increase', '—') }}</td>
+                          <td>{{ ss.get('ransac_inliers', '—') }}</td>
+                          <td>{% if pr.get('status')=='OK' %}<span class="badge bg-success">OK</span>{% else %}<span class="badge bg-danger">FAIL</span>{% endif %}</td>
+                        {% endif %}
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% endif %}
+
+                {# ── Stage 4N ──────────────────────────────────────────── #}
+                {% if s4p %}
+                <div class="mb-2">
+                  <div class="fw-semibold small text-muted mb-1">Stage 4N — Geometry (D3/D6, U3/U6){% if d.get('stage4n_rescue') %} <span class="badge bg-warning text-dark">rescue</span>{% endif %}</div>
+                  <table class="table table-bordered table-sm small mb-0">
+                    <thead class="table-secondary">
+                      <tr><th>Pair</th><th>Status</th><th>Score</th><th>Blur</th><th>Circle</th><th>SSIM</th><th>Grease %</th><th>RANSAC Inliers</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for pfx, pr in s4p.items() %}
+                      {% set gt = pr.get('gate', {}) %}
+                      {% set si = pr.get('sift_stats', {}) %}
+                      {% set gr = pr.get('grease', {}) %}
+                      <tr>
+                        <td class="fw-semibold">{{ pfx }}</td>
+                        {% if pr.get('status') == 'MISSING_IMAGES' %}
+                          <td colspan="7" class="text-muted fst-italic">Missing images</td>
+                        {% else %}
+                          {% set st = pr.get('status','') %}
+                          <td><span class="badge bg-{% if st=='PASS' %}success{% elif st=='REVIEW' %}warning text-dark{% else %}danger{% endif %}">{{ st }}</span></td>
+                          <td>{{ pr.get('score', '—') }}</td>
+                          <td>{{ gt.get('blur_score', '—') }}</td>
+                          <td>{% if gt.get('circle_found') %}✓{% else %}✗{% endif %}</td>
+                          <td>{{ si.get('ssim_score', '—') }}</td>
+                          <td>{{ gr.get('grease_pct', '—') }}{% if gr.get('grease_pct') is not none %}%{% endif %}</td>
+                          <td>{{ si.get('ransac_inliers', '—') }}</td>
+                        {% endif %}
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% endif %}
+
+                {# ── OCR (obstruction) ─────────────────────────────────── #}
+                {% set ocr = d.get('ocr', {}) %}
+                {% if ocr %}
+                <div class="mb-2">
+                  <div class="fw-semibold small text-muted mb-1">OCR Extraction</div>
+                  <table class="table table-bordered table-sm small mb-0" style="max-width:300px">
+                    <tr><th>Images Processed</th><td>{{ ocr.get('images_processed', '—') }}</td></tr>
+                    <tr><th>Images Failed</th><td>{{ ocr.get('images_failed', '—') }}</td></tr>
+                  </table>
+                </div>
+                {% endif %}
+
+                {# ── Errors ────────────────────────────────────────────── #}
+                {% for ekey in ['stage2n_error','stage3n_error','stage4n_error','stage4n_rescue_error','ocr_error'] %}
+                  {% if d.get(ekey) %}
+                    <div class="alert alert-danger py-1 small mb-1">{{ ekey }}: {{ d[ekey] }}</div>
+                  {% endif %}
+                {% endfor %}
+
+                {# ── Analysis images ───────────────────────────────────── #}
+                {% if row.type == "no_obstruction" %}
+                {% set base_url = "/reports/" ~ job_id ~ "/output/no_obstruction/" ~ row.name ~ "/" %}
+                {% set failed   = row.failed_stage or "" %}
+                {% set s2n_fail = "D1D4" in failed or "U1U4" in failed %}
+                {% set s3n_fail = "D2D5" in failed or "U2U5" in failed %}
+
+                <div class="mt-3">
+                  <div class="fw-semibold small text-muted mb-2">Analysis Images</div>
+
+                  {# helper macro for one image pair row #}
+                  {% macro img_row(label, composite, kp) %}
+                  <div class="col-12 analysis-img-group mb-1">
+                    <div class="small text-muted fw-semibold mb-1">{{ label }}</div>
+                    <div class="d-flex gap-2 flex-wrap">
+                      <a href="{{ composite }}" target="_blank">
+                        <img src="{{ composite }}" loading="lazy"
+                             class="rounded border"
+                             style="max-height:180px; max-width:100%; object-fit:contain; cursor:zoom-in"
+                             alt="{{ label }} composite"
+                             onerror="this.closest('.analysis-img-group').style.display='none'">
+                      </a>
+                      {% if kp %}
+                      <a href="{{ kp }}" target="_blank">
+                        <img src="{{ kp }}" loading="lazy"
+                             class="rounded border"
+                             style="max-height:180px; max-width:100%; object-fit:contain; cursor:zoom-in"
+                             alt="{{ label }} keypoints"
+                             onerror="this.closest('a').style.display='none'">
+                      </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endmacro %}
+
+                  {% macro skipped_row(stage_label, reason_label) %}
+                  <div class="col-12 mb-1">
+                    <div class="small text-muted fw-semibold mb-1">{{ stage_label }}</div>
+                    <div class="px-3 py-2 rounded border text-muted small fst-italic"
+                         style="background:#f8f9fa; border-color:#dee2e6!important">
+                      Not processed &mdash; {{ reason_label }} did not pass
+                    </div>
+                  </div>
+                  {% endmacro %}
+
+                  {# Stage 2N — always runs for no_obstruction #}
+                  {{ img_row("Stage 2N — SIFT (D1/D4)", base_url~"D_composite.jpg",  base_url~"D_keypoint_matches.jpg") }}
+                  {{ img_row("Stage 2N — SIFT (U1/U4)", base_url~"U_composite.jpg",  base_url~"U_keypoint_matches.jpg") }}
+
+                  {# Stage 3N — skipped if Stage 2N failed #}
+                  {% if s2n_fail %}
+                    {{ skipped_row("Stage 3N — Washing (D2/D5)", "Stage 2N") }}
+                    {{ skipped_row("Stage 3N — Washing (U2/U5)", "Stage 2N") }}
+                  {% else %}
+                    {{ img_row("Stage 3N — Washing (D2/D5)", base_url~"D2_composite.jpg", base_url~"D2_keypoint_matches.jpg") }}
+                    {{ img_row("Stage 3N — Washing (U2/U5)", base_url~"U2_composite.jpg", base_url~"U2_keypoint_matches.jpg") }}
+                  {% endif %}
+
+                  {# Stage 4N — skipped if Stage 2N or Stage 3N failed #}
+                  {% if s2n_fail %}
+                    {{ skipped_row("Stage 4N — Geometry (D3/D6)", "Stage 2N") }}
+                    {{ skipped_row("Stage 4N — Geometry (U3/U6)", "Stage 2N") }}
+                  {% elif s3n_fail %}
+                    {{ skipped_row("Stage 4N — Geometry (D3/D6)", "Stage 3N") }}
+                    {{ skipped_row("Stage 4N — Geometry (U3/U6)", "Stage 3N") }}
+                  {% else %}
+                    {{ img_row("Stage 4N — Geometry (D3/D6)", base_url~"D3_gf_report.jpg", "") }}
+                    {{ img_row("Stage 4N — Geometry (U3/U6)", base_url~"U3_gf_report.jpg", "") }}
+                  {% endif %}
+
+                </div>
+                {% endif %}
+
+              </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Contact Sheets ════════════════════════════════════════════════════ -->
+  {% if sheet_urls %}
+  <div class="card border-0 shadow-sm mb-4 mt-4">
+    <div class="card-header bg-secondary text-white fw-semibold">
+      Contact Sheets
+      <span class="fw-normal small ms-2 opacity-75">— thumbnail grids of key images per outcome group</span>
+    </div>
+    <div class="card-body p-2">
+      <div class="accordion" id="sheetsAccordion">
+
+        {% set sheet_groups = [
+          ("accepted",    "Accepted",                     "success"),
+          ("failed_d1d4", "Failed Stage 1 — D1/D4 + U1/U4 (SIFT)",  "danger"),
+          ("failed_d2d5", "Failed Stage 2 — D2/D5 + U2/U5 (Washing)","warning"),
+          ("failed_d3d6", "Failed Stage 3 — D3/D6 + U3/U6 (Geometry)","secondary"),
+        ] %}
+
+        {% for key, label, colour in sheet_groups %}
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#sheet-{{ key }}"
+                    aria-expanded="false">
+              <span class="badge bg-{{ colour }} me-2">&nbsp;</span>
+              {{ label }}
+              {% if sheet_urls[key] %}
+                &nbsp;&mdash;&nbsp;
+                <a href="{{ sheet_urls[key] }}" target="_blank"
+                   class="ms-1 text-decoration-none small"
+                   onclick="event.stopPropagation()">
+                  Download full size &#8599;
+                </a>
+              {% else %}
+                <span class="ms-2 text-muted small fw-normal">(no folders in this group)</span>
+              {% endif %}
+            </button>
+          </h2>
+          <div id="sheet-{{ key }}" class="accordion-collapse collapse"
+               data-bs-parent="#sheetsAccordion">
+            <div class="accordion-body p-2">
+              {% if sheet_urls[key] %}
+              <img src="{{ sheet_urls[key] }}" loading="lazy"
+                   class="img-fluid rounded" style="max-width:100%"
+                   alt="Contact sheet: {{ label }}" />
+              {% else %}
+              <span class="badge bg-secondary text-white">No folders in this group</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="mt-3 text-muted small">
+    <a href="/" class="text-decoration-none">&larr; Back to upload</a>
+    &bull;
+    <a href="/reports/{{ job_id }}/output/pipeline_run_{{ result.run_date[:10] | replace('-','') }}" class="text-decoration-none">Download JSON report</a>
+  </div>
+
+</div><!-- /container -->
+
+<script src="/static/js/results.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmElQ9UQ9vqNW9hKqlNrRSXl6bWY"
+        crossorigin="anonymous"></script>
+</body>
+</html>

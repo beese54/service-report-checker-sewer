@@ -1,0 +1,37 @@
+services:
+  wrn-checker:
+    build: .
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    volumes:
+      - ./data/input:/data/input
+      - ./data/output:/data/output
+    environment:
+      OUTPUT_DIR: /data/output
+      DETECTOR_MODEL: /app/manhole_detector/v1_positive_only3/weights/best.pt
+      # APP_PASSWORD: wrnchecker
+      # MAX_UPLOAD_MB: "200"
+      # ORIGINAL_IMAGES_DIR: /data/original_images
+      # ANALYSIS_DIR: /data/analysis
+      # NO_OBSTRUCTION_DIR: /data/no_obstruction
+      # GROUND_TRUTH_PATH: /data/verification/ground_truth.json
+      # Pipeline thresholds:
+      # STAGE2N_MIN_INLIERS: "10"
+      # STAGE2N_MIN_PCT_CHG: "5.0"
+      # STAGE3N_PASS_TIER: "HIGH"
+      # STAGE4N_REVIEW_IS_ACCEPTED: "false"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Resource limits — heavy ML deps need at least 4 GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+        reservations:
+          memory: 4g

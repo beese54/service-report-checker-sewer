@@ -1,0 +1,41 @@
+# WRN Service Report Checker — Full pipeline dependencies
+# Install order for Docker:
+#   pip install paddleocr==2.7.3 --no-deps   (handles conflicting opencv pin)
+#   pip install -r requirements-pipeline.txt
+
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+jinja2==3.1.4
+aiofiles>=23.0
+sse-starlette>=1.6
+
+# ── Core ML / CV ──────────────────────────────────────────────────────────────
+numpy==1.26.4
+opencv-contrib-python-headless>=4.7,<4.10
+Pillow>=9.0
+scikit-image>=0.21
+scipy>=1.11
+
+# ── PaddleOCR stack ───────────────────────────────────────────────────────────
+# paddleocr==2.7.3 installed separately with --no-deps to skip bad opencv pin
+paddlepaddle==2.6.2
+shapely
+pyclipper
+imgaug
+lmdb
+tqdm
+visualdl
+attrdict
+rapidfuzz
+
+# ── YOLOv8 (optional — only needed if manhole detector model is trained) ──────
+# ultralytics>=8.0
+
+# ── Analytics (monitoring, baseline evolution) ────────────────────────────────
+pandas>=2.0
+
+# ── Excel report ──────────────────────────────────────────────────────────────
+openpyxl>=3.1
+matplotlib>=3.7
