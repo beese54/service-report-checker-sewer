@@ -1,6 +1,6 @@
 # WRN Service Report Checker
 
-Automated quality assurance pipeline for manhole CCTV service reports. Operators upload a ZIP of job folders via a browser interface; the system runs a multi-stage computer vision pipeline and returns a per-folder verdict within minutes.
+Automated pipeline for sewer service report validation. Uses classical computer vision (SIFT, FLANN, RANSAC), a trained YOLOv8 manhole detector, and PaddleOCR to run staged quality checks on inspection images and generate pass/fail analytics.
 
 ---
 
