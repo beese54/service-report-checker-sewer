@@ -35,7 +35,7 @@ Full stage documentation: [`docs/pipeline-stages.md`](docs/pipeline-stages.md)
 | `REJECTED` | Failed at one or more stages |
 | `OBSTRUCTION_PROCESSED` | Obstruction folder, OCR succeeded |
 
-The results page shows a summary table plus **contact sheet images** — thumbnail grids of key images for each outcome group — for quick visual QA.
+The results page shows a summary table with per-stage metrics for each outcome group.
 
 ---
 
@@ -201,42 +201,6 @@ After running pipeline jobs, you can label results to optimise detection thresho
 2. Label at least 30 folders.
 3. Run `python verification/optimise_thresholds.py` to sweep thresholds.
 4. Review `verification/recommended_thresholds.json` and update `pipeline_config.py`.
-
----
-
-## Example Output
-
-Example images from job folder **160389** are in [`docs/examples/160389/`](docs/examples/160389/).
-
-### Stage 2N — SIFT Alignment (U1/U4 pair)
-
-Keypoint matches between the before and after images — inliers shown in green:
-
-![SIFT keypoint matches](docs/examples/160389/U_keypoint_matches.jpg)
-
-Analysis panel (match quality, homography validity, spatial coverage):
-
-![SIFT analysis panel](docs/examples/160389/U_composite_text.jpg)
-
-### Stage 3N — Washing Confidence (U2/U5 pair)
-
-Keypoint matches for the washing pair:
-
-![Washing SIFT matches](docs/examples/160389/U2_keypoint_matches.jpg)
-
-Washing confidence analysis panel:
-
-![Washing analysis panel](docs/examples/160389/U2_composite_text.jpg)
-
-### Stage 4N — Geometry Analysis (U3/U6 pair)
-
-Keypoint matches for the geometry pair:
-
-![Geometry SIFT matches](docs/examples/160389/U3_keypoint_matches.jpg)
-
-Geometry report metrics panel (grease-film score, signal breakdown):
-
-![Geometry report panel](docs/examples/160389/U3_gf_report_text.jpg)
 
 ---
 
