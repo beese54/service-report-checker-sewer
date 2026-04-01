@@ -11,12 +11,6 @@
     .verdict-REVIEW { color: #facc15; }
     .verdict-FAIL   { color: #f87171; }
     .verdict-UNKNOWN { color: #9ca3af; }
-    .img-thumb { width: 100%; max-height: 260px; object-fit: cover; border-radius: 6px;
-                 border: 1px solid #333; cursor: zoom-in; transition: transform .15s; }
-    .img-thumb:hover { transform: scale(1.03); }
-    .img-full { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9);
-                z-index: 9999; align-items: center; justify-content: center; cursor: zoom-out; }
-    .img-full img { max-width: 96vw; max-height: 96vh; border-radius: 4px; }
     .metric-row { display: flex; justify-content: space-between; border-bottom: 1px solid #2a2a2a;
                   padding: 3px 0; font-size: .85rem; }
     .metric-label { color: #9ca3af; }
@@ -86,50 +80,10 @@
   {% endif %}
 
   <!-- ── Main grid ────────────────────────────────────────────────────────── -->
-  <div class="row g-3">
+  <div class="row g-3 justify-content-center">
 
-    <!-- LEFT COLUMN: original source images -->
-    <div class="col-lg-5">
-      <div class="section-label">Original source images</div>
-      <div class="row g-2">
-        {% set orig_keys = ['D3', 'D6', 'U3', 'U6', 'D1', 'D4', 'U1', 'U4'] %}
-        {% for base in orig_keys %}
-          {% if ctx.images.originals[base] is defined %}
-          <div class="col-6">
-            <div class="text-center" style="font-size:.72rem; color:#6b7280; margin-bottom:2px;">{{ base }}</div>
-            <img src="{{ ctx.images.originals[base] }}" class="img-thumb"
-                 data-action="zoom" alt="{{ base }}">
-          </div>
-          {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- MIDDLE COLUMN: pipeline report images -->
-    <div class="col-lg-4">
-      <div class="section-label">Pipeline report images</div>
-      <div class="row g-2">
-        {% set report_keys = [
-          ctx.folder_id ~ '_gf_report.jpg',
-          ctx.folder_id ~ '_report.jpg',
-          'D3_gf_report.jpg', 'U3_gf_report.jpg',
-          'D_composite.jpg', 'U_composite.jpg',
-          'D2_composite.jpg', 'U2_composite.jpg',
-        ] %}
-        {% for fname in report_keys %}
-          {% if ctx.images.pipeline[fname] is defined %}
-          <div class="col-12">
-            <div class="text-center" style="font-size:.72rem; color:#6b7280; margin-bottom:2px;">{{ fname }}</div>
-            <img src="{{ ctx.images.pipeline[fname] }}" class="img-thumb"
-                 data-action="zoom" alt="{{ fname }}">
-          </div>
-          {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- RIGHT COLUMN: metrics + action buttons -->
-    <div class="col-lg-3">
+    <!-- Analysis panel: metrics + action buttons -->
+    <div class="col-lg-6">
 
       <!-- Stage 4N metrics -->
       {% if ctx.stage4n %}
@@ -265,14 +219,9 @@
         </div>
       </div>
 
-    </div><!-- /right col -->
+    </div><!-- /analysis panel -->
   </div><!-- /row -->
 </div><!-- /container -->
-
-<!-- Image zoom overlay -->
-<div class="img-full" id="zoom-overlay" data-action="close-zoom"">
-  <img id="zoom-img" src="" alt="">
-</div>
 
 <script src="/static/js/verify.js"></script>
 </body>

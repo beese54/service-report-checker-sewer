@@ -1,12 +1,3 @@
-// ── Zoom helpers ──────────────────────────────────────────────────────────────
-function openZoom(src) {
-  document.getElementById('zoom-img').src = src;
-  document.getElementById('zoom-overlay').style.display = 'flex';
-}
-function closeZoom() {
-  document.getElementById('zoom-overlay').style.display = 'none';
-}
-
 // ── Disagree toggle ───────────────────────────────────────────────────────────
 function toggleDisagree() {
   const f = document.getElementById('disagree-form');
@@ -29,9 +20,7 @@ document.addEventListener('click', function(e) {
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const action = el.dataset.action;
-  if      (action === 'zoom')             openZoom(el.src);
-  else if (action === 'close-zoom')       closeZoom();
-  else if (action === 'toggle-disagree')  toggleDisagree();
+  if      (action === 'toggle-disagree')  toggleDisagree();
   else if (action === 'submit')           submitAction(el.dataset.value);
 });
 
@@ -39,8 +28,6 @@ document.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   const tag = document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-  if (e.key === 'Escape') { closeZoom(); return; }
-  if (document.getElementById('zoom-overlay').style.display === 'flex') return;
   if (e.key === 'y' || e.key === 'Y') submitAction('agree');
   if (e.key === 's' || e.key === 'S') submitAction('skip');
   if (e.key === 'n' || e.key === 'N') toggleDisagree();
